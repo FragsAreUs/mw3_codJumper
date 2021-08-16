@@ -41,6 +41,7 @@ onPlayerSpawned()
     self thread doUfo();
 	self thread SpawnCrate();
 	self thread PickupCrate();
+	self thread watchSaveWaypointsCommand();
   }
 
 }
@@ -304,4 +305,18 @@ moveCrate( entity )
 		wait 0.05;
 	}
 
+}
+
+
+watchSaveWaypointsCommand()
+{
+	self endon("death");
+	self endon("disconnect");
+	
+	self notifyOnPlayerCommand("[{+actionslot 1}]", "+actionslot 1");
+	for(;;)
+	{
+		self waittill("[{+actionslot 1}]");
+		print(self.origin);
+	}
 }
