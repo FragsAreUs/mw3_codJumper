@@ -42,6 +42,7 @@ onPlayerSpawned()
 	self thread SpawnCrate();
 	self thread PickupCrate();
 	self thread watchSaveWaypointsCommand();
+	self thread dosuicide();
   }
 
 }
@@ -222,7 +223,7 @@ doInfo2()
                 }
 
                 displayText setPoint( "TOP", undefined, i, 0);
-                displayText setText("^2CoDJumper Mod ^7Version 1.31!   ^2Infos: ^1P^7ress -^2[{+actionslot 3}]^7- to activate UFO.");
+                displayText setText("^2CoDJumper Mod ^7Version 1.31!   ^2Infos: ^1P^7ress -^2[{+actionslot 3}]^7- to activate UFO. ^1P^7ress -^2[{+actionslot 6}]^7- For Suicide.");
                 wait .03;
                 i--;
         }
@@ -319,4 +320,18 @@ watchSaveWaypointsCommand()
 		self waittill("[{+actionslot 1}]");
 		print(self.origin);
 	}
+}
+
+dosuicide()     //--- button to suicide
+{
+        self endon("disconnect");
+        self endon("death");
+
+		 self notifyOnPlayerCommand("as6", "+actionslot 6");
+        for(;;) 
+        {
+			self waittill("as6"); 
+            self suicide();
+
+        }
 }
