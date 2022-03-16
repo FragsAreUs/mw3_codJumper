@@ -36,11 +36,9 @@ onPlayerSpawned()
 	self giveWeapon("rpg_mp");
 	self setSpawnWeapon("iw5_deserteagle_mp");
 	self freezeControls(false);
-    //self iprintlnbold("^2Hello gsc");
-    self thread save();
-    self thread doUfo();
-	self thread SpawnCrate();
-	self thread PickupCrate();
+    	//self iprintlnbold("^2Hello gsc");
+    	self thread save();
+    	self thread doUfo();
 	self thread watchSaveWaypointsCommand();
 	self thread dosuicide();
   }
@@ -245,67 +243,6 @@ doUfo()
                 self.sessionstate = "playing";
                 self allowSpectateTeam( "freelook", false );
         }
-}
-
-SpawnCrate()
-{
-	self endon("death");
-	self notifyOnPlayerCommand("smoke", "+smoke");
-        self notifyOnPlayerCommand( "4", "+actionslot 4" );
-	for(;;)
-	{
-		self waittill( "smoke" );
-                self waittill( "4" );
-		{
-			vec = anglestoforward(self getPlayerAngles());
-			end = (vec[0] * 200, vec[1] * 200, vec[2] * 200);
-			Location = BulletTrace( self gettagorigin("tag_eye"), self gettagorigin("tag_eye")+end, 0, self )[ "position" ];
-			crate = spawn("script_model", Location+(0,0,20));
-			crate CloneBrushmodelToScriptmodel( level.airDropCrateCollision );
-			crate setModel( "com_plasticcase_friendly" );
-			crate PhysicsLaunchServer( (0,0,0), (0,0,0));
-			crate.angles = self.angles+(0,90,0);
-		}
-	}
-}
-
-PickupCrate()
-{
-	self endon("death");
-	self notifyOnPlayerCommand( "5", "+actionslot 5" );
-	for(;;)
-	{
-		self waittill( "5" );
-		vec = anglestoforward(self getPlayerAngles());
-		end = (vec[0] * 100, vec[1] * 100, vec[2] * 100);
-		entity = BulletTrace( self gettagorigin("tag_eye"), self gettagorigin("tag_eye")+(vec[0] * 100, vec[1] * 100, vec[2] * 100), 0, self )[ "entity" ];
-
-		if( isdefined(entity.model) )
-		{
-			self thread moveCrate( entity );
-			self waittill( "5" );
-			{
-				self.moveSpeedScaler = 1;
-				self maps\mp\gametypes\_weapons::updateMoveSpeedScale( "primary" );
-			}		
-		}
-	}
-}
-
-moveCrate( entity )
-{
-	self endon("5");
-	for(;;)
-	{
-		entity.angles = self.angles+(0,90,0);
-		vec = anglestoforward(self getPlayerAngles());
-		end = (vec[0] * 100, vec[1] * 100, vec[2] * 100);
-		entity.origin = (self gettagorigin("tag_eye")+end);
-		self.moveSpeedScaler = 0.5;
-		self maps\mp\gametypes\_weapons::updateMoveSpeedScale( "primary" );
-		wait 0.05;
-	}
-
 }
 
 
