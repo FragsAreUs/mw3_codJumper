@@ -7,10 +7,12 @@ init()
 	level thread doInfo();
 	wait 1.0;
 	level thread doInfo2();
-	setDvar("sv_cheats", 1);
+	setDvar("sv_cheats", 0);
 	setDvar("sv_enableBounces", 1);
 	setDvar("player_sustainammo", 1);
 	setDvar("jump_slowdownEnable", 0);
+	setDvar( "g_playerCollision", 2);
+	setDvar( "g_playerEjection", 2);
 }
 
 onPlayerConnect()
@@ -30,17 +32,18 @@ onPlayerSpawned()
   self endon("disconnect");
   for(;;)
   {
-    self waittill("spawned_player");
+    self waittill("spawned_player", player);
 	self takeAllWeapons();
 	self giveWeapon("iw5_deserteagle_mp");
 	self giveWeapon("rpg_mp");
 	self setSpawnWeapon("iw5_deserteagle_mp");
 	self freezeControls(false);
-    	//self iprintlnbold("^2Hello gsc");
-    	self thread save();
-    	self thread doUfo();
-	self thread watchSaveWaypointsCommand();
+    self thread save();
+    self thread doUfo();
 	self thread dosuicide();
+	self thread initVelo();
+	self thread onMapEnd();
+    self thread AmmoSustain();
   }
 
 }
@@ -79,8 +82,7 @@ DoDvars()
 	setDvar("scr_war_scorelimit", 0);
 	setDvar("scr_friendlyfire", 3);
 	self thread maps\mp\gametypes\_hud_message::hintMessage("Welcome ^2"+self.name+"^7!");
-	self thread maps\mp\gametypes\_hud_message::hintMessage("^2C^7oDJumper ^2M^7od");
-	self thread maps\mp\gametypes\_hud_message::hintMessage("By ^2R4d^70^2xZz / (^2Drofder^7 (^2S^7ave/^2L^7oad Position))");
+	self thread maps\mp\gametypes\_hud_message::hintMessage("^4TO ^2I^7nhouse ^2C^7od  ^2J^7umper");
 
 }
 
@@ -104,7 +106,7 @@ save()
 					{
 						self iPrintLn("^8P^7osition 1 Saved.");
 						self.save1pos = self.origin;
-						self.save1ang = self.angles;
+						self.save1ang = self getPlayerAngles();
 
 						wait 0.75;
 
@@ -115,7 +117,7 @@ save()
 					{
 						self iPrintLn("^8P^7osition 2 Saved.");
 						self.save2pos = self.origin;
-						self.save2ang = self.angles;
+						self.save2ang = self getPlayerAngles();
 
 						wait 0.75;
 
@@ -193,38 +195,16 @@ doInfo()
 {
         self endon("disconnect");
         displayText = self createServerFontString( "objective", 1.5 );
-        i = 0;
-        for( ;; )
-        {
-                if(i == -1300) 
-		{
-                        i = 1300;
-                }
-
-                displayText setPoint( "BOTTOM", undefined, i, 0);
-                displayText setText("^2Infos: ^1P^7ress ^22x ^7-^2[{+melee}]^7- to Save your Position and ^22x ^7-^2[{+activate}]^7- to Load your Position. ^1P^7ress -^2[{+smoke}]^7- & -^2[{+actionslot 4}]^7- to Spawn a Crate.  ^1P^7ress -^2[{+actionslot 5}]^7- to Move and drop a Crate.");
-                wait .03;
-                i--;
-        }
+        displayText setPoint( "BOTTOM");
+         displayText setText("^2Infos: ^1P^7ress ^22x ^7-^2[{+melee}]^7- to Save your Position and ^22x ^7-^2[{+activate}]^7- to Load your Position.");
 }
 
 doInfo2()
 {
-        self endon("disconnect");
-        displayText = self createServerFontString( "objective", 1.5 );
-        i = 0;
-        for( ;; )
-        {
-                if(i == -1020) 
-		{
-                        i = 1020;
-                }
-
-                displayText setPoint( "TOP", undefined, i, 0);
-                displayText setText("^2CoDJumper Mod ^7Version 1.31!   ^2Infos: ^1P^7ress -^2[{+actionslot 3}]^7- to activate UFO. ^1P^7ress -^2[{+actionslot 6}]^7- For Suicide.");
-                wait .03;
-                i--;
-        }
+    self endon("disconnect");
+    displayText = self createServerFontString( "objective", 1.5 );
+    displayText setPoint( "TOP");
+    displayText setText("Welcome to ^1inhouse ^6Cod ^3Jumper  ^2Infos:^1P^7ress -^2[{+actionslot 6}]^7- For Suicide ");  
 }
 
 
@@ -246,19 +226,6 @@ doUfo()
 }
 
 
-watchSaveWaypointsCommand()
-{
-	self endon("death");
-	self endon("disconnect");
-	
-	self notifyOnPlayerCommand("[{+actionslot 1}]", "+actionslot 1");
-	for(;;)
-	{
-		self waittill("[{+actionslot 1}]");
-		print(self.origin);
-	}
-}
-
 dosuicide()     //--- button to suicide
 {
         self endon("disconnect");
@@ -272,3 +239,80 @@ dosuicide()     //--- button to suicide
 
         }
 }
+
+onMapEnd()
+{
+	self endon( "disconnect" );
+	level waittill("game_ended");
+	
+	if (isDefined(self.hud_velo))
+		self.hud_velo destroy();
+	
+	if (isDefined(self.hud_maxvelo))
+		self.hud_maxvelo destroy();
+}
+
+initVelo()
+{
+    self endon( "disconnect" );
+	level endon( "game_ended" );
+	
+	self.maxspeed = 0;
+	
+	if (isDefined(self.hud_velo))
+		self.hud_velo destroy();
+
+	self.hud_velo = addTextHud( self, 0, -15, 1, "center", "bottom", 1.5 );
+	self.hud_velo.horzAlign = "center";
+    self.hud_velo.vertAlign = "bottom";
+	self.hud_velo.hidewheninmenu = true;
+	
+	if (isDefined(self.hud_maxvelo))
+		self.hud_maxvelo destroy();
+
+	self.hud_maxvelo = addTextHud( self, 0, -30, 1, "center", "bottom", 1.5 );
+	self.hud_maxvelo.horzAlign = "center";
+    self.hud_maxvelo.vertAlign = "bottom";
+	self.hud_maxvelo.hidewheninmenu = true;
+	self.hud_maxvelo.label = &"^3(&&1)";
+	
+	self.hud_maxvelo setValue( 0 );
+	self.hud_velo setValue( 0 );
+	
+	wait 0.5;
+	
+	while(1)
+	{
+		wait 0.01;
+		
+		velocity = self getPlayerSpeed();
+		
+		if (velocity > self.maxspeed)
+			self.maxspeed = velocity;
+		
+		self.hud_velo setValue(velocity);
+		self.hud_maxvelo setValue(self.maxspeed);
+	}
+}
+
+getPlayerSpeed() {
+    velocity = self getVelocity();
+    return int( sqrt( ( velocity[0] * velocity[0] ) + ( velocity[1] * velocity[1] ) ) );
+}
+
+addTextHud( who, x, y, alpha, alignX, alignY, fontScale )
+{
+	if( isPlayer( who ) )
+		hud = newClientHudElem( who );
+	else
+		hud = newHudElem();
+
+	hud.x = x;
+	hud.y = y;
+	hud.alpha = alpha;
+	hud.alignX = alignX;
+	hud.alignY = alignY;
+	hud.fontScale = fontScale;
+	return hud;
+}
+
