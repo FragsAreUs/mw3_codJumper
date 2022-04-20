@@ -43,7 +43,6 @@ onPlayerSpawned()
 	self thread dosuicide();
 	self thread initVelo();
 	self thread onMapEnd();
-    self thread AmmoSustain();
   }
 
 }
